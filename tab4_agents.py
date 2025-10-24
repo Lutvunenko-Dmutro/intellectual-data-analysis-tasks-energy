@@ -2,17 +2,13 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext
 import random
 
-# ##################################################################
-# ---             КЛАСИ АГЕНТІВ ДЛЯ SMART GRID                   ---
-# ##################################################################
-
 class BaseAgent:
     """Базовий клас для всіх агентів."""
     def __init__(self, name):
         self.name = name
-        self.log_widget = None # Сюди ми підключимо GUI
+        self.log_widget = None 
 
-    def log(self, message, tag='agent_msg'): # Додано 'tag'
+    def log(self, message, tag='agent_msg'): 
         """Допоміжна функція для виводу в лог симуляції."""
         if self.log_widget:
             self.log_widget.config(state='normal')
@@ -42,7 +38,6 @@ class GeneratorAgent(BaseAgent):
         """Для Координації (Наказ). Виконує наказ оператора."""
         if command == "ON":
             self.is_on = True
-            # Генератор не може видати менше за свій технологічний мінімум
             self.output = max(self.min_output, target_output) 
             self.log(f"Виконую наказ 'ON'. Запускаюсь на {self.output:.0f} МВт.")
         elif command == "OFF":
@@ -59,17 +54,15 @@ class ConsumerAgent(BaseAgent):
     def __init__(self, name, base_demand_mw, price_sensitivity=0.1):
         super().__init__(name)
         self.base_demand = base_demand_mw
-        self.price_sensitivity = price_sensitivity # Наскільки % впаде попит, якщо ціна $100
+        self.price_sensitivity = price_sensitivity 
 
     def get_demand(self, current_price):
         """Розраховує попит, враховуючи ціну."""
         if current_price < 80:
-             # Якщо ціна низька, попит максимальний
             demand = self.base_demand
         else:
-            # Якщо ціна висока, попит падає (Кооперація)
             demand = self.base_demand * (1 - (current_price / (100 / self.price_sensitivity)))
-            demand = max(0, demand) # Попит не може бути негативним
+            demand = max(0, demand) 
         
         self.log(f"Поточна ціна {current_price:.0f}$. Мій попит: {demand:.0f} МВт.")
         return demand
@@ -83,7 +76,6 @@ class SystemOperatorAgent(BaseAgent):
         super().__init__(name)
         self.generators = generators
         self.consumers = consumers
-        # Підключаємо лог до всіх агентів
         for agent_list in [generators, consumers]:
             for agent in agent_list:
                 agent.log_widget = self.log_widget
@@ -148,10 +140,6 @@ class SystemOperatorAgent(BaseAgent):
         self.log(f"Загальна вартість (погодинна): ${total_cost:,.0f}", 'result_msg')
         return total_cost
 
-# ##################################################################
-# ---               ГОЛОВНА ФУНКЦІЯ ДЛЯ СТВОРЕННЯ ВКЛАДКИ         ---
-# ##################################################################
-
 def create_tab(tab_control):
     """
     Створює вміст для четвертої вкладки (Функції Агентів)
@@ -161,7 +149,6 @@ def create_tab(tab_control):
     tab4 = ttk.Frame(tab_control, padding=(10, 10))
     tab_control.add(tab4, text='Завдання 4: Функції Агентів')
 
-    # --- 1. Створення фреймів (контейнерів) ---
     main_frame = ttk.Frame(tab4)
     main_frame.pack(fill="both", expand=True)
 
@@ -171,14 +158,9 @@ def create_tab(tab_control):
     right_frame = ttk.LabelFrame(main_frame, text="Симуляція: Архітектура Smart Grid", padding=10)
     right_frame.pack(side="right", fill="both", expand=True)
 
-    # --- 2. Теоретична частина (ліва колонка) ---
-    #
-    # ---- ВЕЛИКИЙ БЛОК ОНОВЛЕННЯ ----
-    #
     theory_frame = ttk.LabelFrame(left_frame, text="Аналіз функцій агентів (Теоретична відповідь)", padding=10)
     theory_frame.pack(fill="x", pady=(0, 10))
 
-    # Дані для блоків
     table_data = [
         ['Спеціалізація', 'Агент виконує вузьке, чітко визначене завдання.', 'Агент-Генератор (тільки генерує), Агент-Споживач (тільки споживає).'],
         ['Координація', 'Централізоване управління для досягнення мети (через "Оператора").', "Оператор системи віддає прямий наказ ('Coordinate') генераторам для балансування мережі."],
@@ -186,47 +168,36 @@ def create_tab(tab_control):
         ['Колективне рішення', 'Агенти спільно приймають рішення (напр., голосування, аукціон).', 'Аукціон "на добу наперед", де генератори пропонують ціни, і система *колективно* обирає найдешевший мікс.']
     ]
     
-    # Фрейм-контейнер для всіх визначень
     definitions_container = ttk.Frame(theory_frame)
     definitions_container.pack(fill="x", expand=True)
     
-    # Ширина для переносу тексту (підібрана під таблицю нижче)
     WRAP_WIDTH = 580 
 
     for item in table_data:
         func_name, description, example = item
         
-        # Рамка для одного визначення
         func_frame = ttk.LabelFrame(definitions_container, text=func_name, padding=7)
         func_frame.pack(fill="x", pady=(0, 5))
         
-        # Опис
         desc_label = ttk.Label(func_frame, text=f"Опис: {description}", wraplength=WRAP_WIDTH, justify="left")
         desc_label.pack(anchor="w")
         
-        # Приклад
         ex_label = ttk.Label(func_frame, text=f"Приклад: {example}", wraplength=WRAP_WIDTH, justify="left", font=("Helvetica", 9, "italic"))
         ex_label.pack(anchor="w", pady=(2,0))
-    #
-    # ---- КІНЕЦЬ БЛОКУ ОНОВЛЕННЯ ----
-    #
 
-    # --- 3. Список агентів (ліва колонка) ---
     agents_frame = ttk.LabelFrame(left_frame, text="Наявні Агенти в мережі [СПЕЦІАЛІЗАЦІЯ]", padding=10)
-    agents_frame.pack(fill="both", expand=True, pady=(10,0)) # Додано pady
+    agents_frame.pack(fill="both", expand=True, pady=(10,0)) 
 
     agents_cols = ('name', 'type', 'capacity', 'cost')
     tree_agents = ttk.Treeview(agents_frame, columns=agents_cols, show='headings', height=8)
     
-    # --- ОНОВЛЕНО: Розширено колонки, щоб відповідати блоку вище ---
     tree_agents.column('name', width=150, anchor='w'); tree_agents.heading('name', text='Назва Агента')
     tree_agents.column('type', width=100, anchor='w'); tree_agents.heading('type', text='Тип')
     tree_agents.column('capacity', width=150, anchor='e'); tree_agents.heading('capacity', text='Потужність/Попит (МВт)')
     tree_agents.column('cost', width=180, anchor='e'); tree_agents.heading('cost', text='Вартість/Чутливість')
     
-    tree_agents.pack(fill="both", expand=True) # .pack() був у минулому виправленні
+    tree_agents.pack(fill="both", expand=True) 
     
-    # --- 4. Практична частина (права колонка) ---
     control_frame = ttk.Frame(right_frame)
     control_frame.pack(fill="x", pady=5)
     
@@ -234,8 +205,7 @@ def create_tab(tab_control):
     demand_var = tk.IntVar(value=1800)
     ttk.Entry(control_frame, textvariable=demand_var, width=10).pack(side="left", padx=5)
 
-    # --- ОНОВЛЕНО: Чат (Text + Scrollbar) ---
-    log_frame = ttk.Frame(right_frame) # Фрейм для логу та скролбару
+    log_frame = ttk.Frame(right_frame) 
     log_frame.pack(fill="both", expand=True, pady=10)
     
     log_scrollbar = ttk.Scrollbar(log_frame, orient="vertical")
@@ -248,16 +218,12 @@ def create_tab(tab_control):
     log_scrollbar.pack(side="right", fill="y")
     log_widget.pack(side="left", fill="both", expand=True)
 
-    # Додаємо кольорові теги
     log_widget.tag_config('operator_msg', foreground='blue', font=("Courier", 10, "bold"))
-    log_widget.tag_config('agent_msg', foreground='#333333') # Темно-сірий
-    log_widget.tag_config('header_msg', foreground='#006400', font=("Courier", 10, "bold underline")) # Темно-зелений
-    log_widget.tag_config('result_msg', foreground='#b30059', font=("Courier", 10, "bold")) # Малиновий
+    log_widget.tag_config('agent_msg', foreground='#333333') 
+    log_widget.tag_config('header_msg', foreground='#006400', font=("Courier", 10, "bold underline")) 
+    log_widget.tag_config('result_msg', foreground='#b30059', font=("Courier", 10, "bold")) 
     log_widget.tag_config('error_msg', foreground='red', font=("Courier", 10, "bold"))
-    # --- КІНЕЦЬ ОНОВЛЕННЯ ЧАТУ ---
 
-    # --- 5. Створення агентів та запуск симуляції ---
-    
     generators = [
         GeneratorAgent(name="АЕС-1 (База)", capacity_mw=1000, cost_per_mw=15),
         GeneratorAgent(name="ТЕС-1 (Вугілля)", capacity_mw=300, cost_per_mw=50, min_output=0.4),
@@ -276,16 +242,14 @@ def create_tab(tab_control):
     for agent in generators + consumers:
         agent.log_widget = log_widget
 
-    # Заповнюємо таблицю агентів
     for g in generators:
         tree_agents.insert('', 'end', values=(g.name, 'Генератор', g.capacity, f"{g.cost}$/МВт"))
     for c in consumers:
         tree_agents.insert('', 'end', values=(c.name, 'Споживач', c.base_demand, f"{c.price_sensitivity*100:.0f}% чутл."))
         
-    # --- 6. Функції для кнопок ---
     def simulation_wrapper(func_name):
         log_widget.config(state='normal')
-        log_widget.delete('1.0', tk.END) # Очистити лог
+        log_widget.delete('1.0', tk.END) 
         
         try:
             demand = demand_var.get()
@@ -301,7 +265,6 @@ def create_tab(tab_control):
         
         log_widget.config(state='disabled')
 
-    # --- 7. Підключення кнопок ---
     button_frame = ttk.Frame(control_frame)
     button_frame.pack(side="right", fill="x", expand=True)
 
@@ -313,5 +276,4 @@ def create_tab(tab_control):
                       command=lambda: simulation_wrapper("auction"))
     btn2.pack(fill="x", expand=True, padx=5, pady=2)
     
-    # Перший запуск для привітання
     operator.log("Симуляція готова. Оберіть режим управління.", 'header_msg')
