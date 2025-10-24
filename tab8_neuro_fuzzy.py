@@ -4,14 +4,14 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D # Для 3D графіку
-import threading # Для малювання поверхні в окремому потоці
+from mpl_toolkits.mplot3d import Axes3D 
+import threading 
 
-# --- ВИКОРИСТОВУЄМО ТІЛЬКИ SCIKIT-FUZZY ---
-FUZZY_AVAILABLE = False # Починаємо з False
+
+FUZZY_AVAILABLE = False 
 FUZZY_IMPORT_ERROR = ""
-ctrl = None # Зберігатимемо імпортований control
-fuzz = None # Зберігатимемо імпортований fuzz
+ctrl = None 
+fuzz = None 
 
 try:
     import skfuzzy as fuzz
@@ -28,14 +28,7 @@ except Exception as e:
     print(FUZZY_IMPORT_ERROR)
 
 print(f"INFO: Статус доступності scikit-fuzzy: {FUZZY_AVAILABLE}")
-# --- КІНЕЦЬ БЛОКУ ІМПОРТУ ---
 
-
-# ##################################################################
-# ---         ЛОГІКА НЕЧІТКОЇ СИСТЕМИ (ЗАМІСТЬ ANFIS)            ---
-# ##################################################################
-
-# Глобальні змінні для нечіткої системи та симуляції
 fuzzy_ctrl_system = None
 load_simulation = None
 
@@ -71,10 +64,6 @@ def build_fuzzy_system():
     fuzzy_ctrl_system = load_ctrl
     return load_ctrl
 
-# ##################################################################
-# ---               ГОЛОВНА ФУНКЦІЯ ДЛЯ СТВОРЕННЯ ВКЛАДКИ         ---
-# ##################################################################
-
 def create_tab(tab_control):
     """
     Створює вміст для восьмої вкладки (Нейро-нечіткі мережі)
@@ -98,10 +87,6 @@ def create_tab(tab_control):
     right_frame = ttk.Frame(main_frame)
     right_frame.pack(side="right", fill="both", expand=True)
 
-    # --- 2. Ліва колонка (Теорія) ---
-    #
-    # ---- ВЕЛИКИЙ БЛОК ОНОВЛЕННЯ: Прибрано `**` з тексту ----
-    #
     theory_frame = ttk.LabelFrame(left_frame, text="Архітектури та Навчання Нейро-Нечітких Мереж", padding=10)
     theory_frame.grid(row=0, column=0, sticky='nsew')
     theory_frame.grid_columnconfigure(0, weight=1)
@@ -124,7 +109,6 @@ def create_tab(tab_control):
     )
     create_theory_grid_section(theory_frame, 0, "Загальна ідея", intro_content)
 
-    # --- Блок 2: Мамдані ---
     mamdani_content = (
         "Апроксиматор Мамдані: Класичний тип нечіткої системи.\n\n"
         "- Правила: 'ЯКЩО вхід1 є A1 І вхід2 є B1 ТОДІ вихід є C1'.\n"
@@ -134,7 +118,6 @@ def create_tab(tab_control):
     )
     create_theory_grid_section(theory_frame, 1, "Апроксиматор Мамдані", mamdani_content)
 
-    # --- Блок 3: TSK ---
     tsk_content = (
         "Мережа Такагі-Сугено-Канга (TSK): Популярний гібридний тип.\n\n"
         "- Правила: 'ЯКЩО вхід1 є A1 І вхід2 є B1 ТОДІ вихід = f(вхід1, вхід2)'.\n"
@@ -144,7 +127,6 @@ def create_tab(tab_control):
     )
     create_theory_grid_section(theory_frame, 2, "Мережа Такагі-Сугено (TSK)", tsk_content)
 
-    # --- Блок 4: ANFIS ---
     anfis_content = (
         "ANFIS (Adaptive Neuro-Fuzzy Inference System): Найвідоміша реалізація TSK.\n\n"
         "- Архітектура: 5-шарова НМ, де кожен шар виконує крок нечіткого висновку (Фазифікація, Сила правил, Нормалізація, Висновок правила, Загальний вихід).\n"
@@ -152,16 +134,10 @@ def create_tab(tab_control):
         "Примітка: Через проблеми з бібліотекою 'anfis', ця вкладка демонструє базову Нечітку Систему (FIS) за допомогою 'scikit-fuzzy'. FIS є основою для ANFIS."
     )
     create_theory_grid_section(theory_frame, 3, "ANFIS (Теорія)", anfis_content)
-    #
-    # ---- КІНЕЦЬ БЛОКУ ОНОВЛЕННЯ ----
-    #
 
-
-    # --- 3. Права колонка (Симуляція FIS) ---
     sim_frame = ttk.LabelFrame(right_frame, text="Практика: Прогнозування навантаження (Нечітка Система)", padding=10)
     sim_frame.pack(fill="both", expand=True)
 
-    # 3.1 Керування симуляцією
     control_frame = ttk.Frame(sim_frame)
     control_frame.pack(fill="x", pady=(0, 10))
 
@@ -181,7 +157,6 @@ def create_tab(tab_control):
 
     control_frame.grid_columnconfigure(1, weight=1)
 
-    # 3.2 Графік (3D Поверхня)
     fig_frame = ttk.Frame(sim_frame)
     fig_frame.pack(fill="both", expand=True, pady=10)
 
@@ -194,12 +169,10 @@ def create_tab(tab_control):
     result_label = ttk.Label(sim_frame, text="Прогноз навантаження: N/A", justify="center", font=("Helvetica", 12, "bold"))
     result_label.pack(fill="x")
 
-    # --- 4. Логіка FIS ---
     def plot_surface():
         """Малює 3D поверхню відгуку системи."""
         if not FUZZY_AVAILABLE or fuzzy_ctrl_system is None: return
         print("Малюю поверхню відгуку FIS...")
-        # (Код малювання поверхні без змін)
         x_hour = np.arange(0, 24, 1); y_temp = np.arange(-10, 35, 1)
         xx, yy = np.meshgrid(x_hour, y_temp); zz = np.zeros_like(xx)
         temp_sim = ctrl.ControlSystemSimulation(fuzzy_ctrl_system)
@@ -234,15 +207,12 @@ def create_tab(tab_control):
         except ValueError: result_label.config(text="Прогноз: Вхід поза діапазоном")
         except Exception as e: result_label.config(text=f"Помилка: {e}")
 
-
-    # --- 5. Ініціалізація FIS ---
     if FUZZY_AVAILABLE:
         try:
             print("Створення нечіткої системи...")
             control_system = build_fuzzy_system()
             load_simulation = ctrl.ControlSystemSimulation(control_system)
             print("Нечітка система створена.")
-            # Запускаємо малювання поверхні в окремому потоці
             plot_thread = threading.Thread(target=plot_surface, daemon=True)
             plot_thread.start()
             update_simulation()
@@ -253,4 +223,5 @@ def create_tab(tab_control):
             hour_scale.config(state='disabled'); temp_scale.config(state='disabled')
     else:
         result_label.config(text=FUZZY_IMPORT_ERROR, foreground="red", wraplength=500)
+
         hour_scale.config(state='disabled'); temp_scale.config(state='disabled')
