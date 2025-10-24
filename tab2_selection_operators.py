@@ -6,15 +6,12 @@ import collections
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# --- Головна функція, яку імпортує main_dashboard.py ---
-
 def create_tab(tab_control):
     """
     Створює вміст для другої вкладки (Оператори відбору)
     і прикріплює його до 'tab_control'.
     """
     
-    # --- 0. Визначення наших генераторів ---
     GENERATORS = [
         {'name': 'АЕС-1 (База)', 'capacity': 1000, 'cost': 15},
         {'name': 'ТЕС-1 (Вугілля)', 'capacity': 300, 'cost': 50},
@@ -30,7 +27,6 @@ def create_tab(tab_control):
     
     current_population_fitness = []
 
-    # --- 1. Створення фреймів (контейнерів) ---
     tab2 = ttk.Frame(tab_control, padding=(10, 10))
     tab_control.add(tab2, text='Завдання 2: Оптимізація (ГА)')
 
@@ -43,8 +39,6 @@ def create_tab(tab_control):
     right_frame = ttk.Frame(main_frame)
     right_frame.pack(side="right", fill="both", expand=True)
 
-    # --- 2. Теоретична частина (ліва колонка) ---
-    
     sim_control_frame = ttk.LabelFrame(left_frame, text="Параметри симуляції (Unit Commitment)", padding=10)
     sim_control_frame.pack(fill="x", pady=(0, 10))
 
@@ -105,7 +99,6 @@ def create_tab(tab_control):
                          wraplength=700)
     footnote.pack(side="left", fill="x", pady=(5, 0))
     
-    # --- 3. Практична частина (права колонка) ---
     control_frame = ttk.Frame(right_frame)
     control_frame.pack(fill="x", pady=5)
     
@@ -131,7 +124,6 @@ def create_tab(tab_control):
     canvas = FigureCanvasTkAgg(fig, master=right_frame)
     canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-    # --- 4. Функції операторів відбору (допоміжні) ---
     def proportional_selection(pop, k):
         total_fitness = sum(f for _, f in pop)
         if total_fitness == 0:
@@ -164,7 +156,6 @@ def create_tab(tab_control):
         sorted_pop = sorted(pop, key=lambda x: x[1], reverse=True)
         return sorted_pop[:k]
 
-    # --- 5. Функції симуляції (допоміжні) ---
     def calculate_fitness(chromosome, target_load):
         total_gen = 0
         total_cost = 0
@@ -235,12 +226,10 @@ def create_tab(tab_control):
         canvas.draw()
         print("Симуляція Вкладки 2 (Енерго) завершена.")
 
-    # --- 6. Підключення кнопок ---
     run_button = ttk.Button(control_frame, text="Запустити симуляцію", command=generate_and_run_simulation)
     run_button.pack(side="left", padx=10)
     
     gen_button = ttk.Button(sim_control_frame, text="Згенерувати нову популяцію", command=generate_and_run_simulation)
     gen_button.grid(row=0, column=2, sticky="w", padx=10)
     
-    # Запускаємо 1 раз при старті
     generate_and_run_simulation()
