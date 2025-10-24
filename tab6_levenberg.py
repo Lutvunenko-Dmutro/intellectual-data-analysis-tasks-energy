@@ -3,11 +3,7 @@ from tkinter import ttk
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from scipy.optimize import curve_fit # <--- Ядро методу LM
-
-# ##################################################################
-# ---                ЛОГІКА ПРОГНОЗУВАННЯ (LM)                   ---
-# ##################################################################
+from scipy.optimize import curve_fit 
 
 def create_load_data():
     """Створює симульований добовий графік навантаження (24 точки)."""
@@ -21,9 +17,6 @@ def fitting_function(x, a, b, c, d, offset):
     """Наша нелінійна модель для прогнозування."""
     return a * np.sin(np.pi/12 * x + b) + c * np.sin(np.pi/6 * x + d) + offset
 
-# ##################################################################
-# ---               ГОЛОВНА ФУНКЦІЯ ДЛЯ СТВОРЕННЯ ВКЛАДКИ         ---
-# ##################################################################
 
 def create_tab(tab_control):
     """
@@ -33,38 +26,29 @@ def create_tab(tab_control):
     tab6 = ttk.Frame(tab_control, padding=(10, 10))
     tab_control.add(tab6, text='Завдання 6: Прогнозування (LM)')
 
-    # --- 1. Створення фреймів ---
     main_frame = ttk.Frame(tab6)
     main_frame.pack(fill="both", expand=True)
 
-    # --- ВИПРАВЛЕНО: Використовуємо grid для лівої колонки ---
-    # Задаємо фіксовану ширину для лівої колонки
     LEFT_WIDTH = 450
     left_frame = ttk.Frame(main_frame, width=LEFT_WIDTH)
     left_frame.pack(side="left", fill="y", padx=10, expand=False)
-    left_frame.pack_propagate(False) # Забороняємо стискатись
-    # Налаштовуємо grid всередині left_frame
-    left_frame.grid_rowconfigure(0, weight=0) # Теорія
-    left_frame.grid_rowconfigure(1, weight=1) # Порожній простір (якщо потрібен)
-    left_frame.grid_rowconfigure(2, weight=0) # Кнопка знизу
-    left_frame.grid_columnconfigure(0, weight=1) # Колонка займає всю ширину
+    left_frame.pack_propagate(False) 
+
+    left_frame.grid_rowconfigure(0, weight=0) 
+    left_frame.grid_rowconfigure(1, weight=1) 
+    left_frame.grid_rowconfigure(2, weight=0) 
+    left_frame.grid_columnconfigure(0, weight=1) 
 
     right_frame = ttk.Frame(main_frame)
     right_frame.pack(side="right", fill="both", expand=True)
 
-    # --- 2. Ліва колонка (Теорія) ---
-    #
-    # ---- ВЕЛИКИЙ БЛОК ОНОВЛЕННЯ: ttk.Label + grid() ----
-    #
     theory_frame = ttk.LabelFrame(left_frame, text="Метод Левенберга-Марквардта (Теорія)", padding=10)
-    theory_frame.grid(row=0, column=0, sticky='new') # Розміщуємо рамку теорії
-    theory_frame.grid_columnconfigure(0, weight=1) # Дозволяємо вмісту розтягуватись
+    theory_frame.grid(row=0, column=0, sticky='new') 
+    theory_frame.grid_columnconfigure(0, weight=1) 
 
-    # --- Блок 1: Призначення методу ---
     purpose_frame = ttk.LabelFrame(theory_frame, text="Призначення методу", padding=7)
     purpose_frame.grid(row=0, column=0, sticky='new', pady=5)
-    purpose_frame.grid_columnconfigure(0, weight=1) # Колонка всередині purpose_frame
-
+    purpose_frame.grid_columnconfigure(0, weight=1) 
     purpose_content = (
         "Метод Левенберга-Марквардта (LM) — це ітераційний алгоритм, який використовується для розв'язання **нелінійних задач найменших квадратів**.\n\n"
         "**ПРОСТОЮ МОВОЮ:** Коли у вас є 'шумні' дані (як добовий графік навантаження) і складна математична модель (наша `fitting_function`), метод LM допомагає знайти **найкращі параметри** цієї моделі, щоб вона максимально точно 'лягла' на дані.\n\n"
@@ -73,21 +57,13 @@ def create_tab(tab_control):
         "\n  - **Методу градієнтного спуску:** Надійний (завжди рухається до мінімуму), але повільний біля оптимуму."
         "\nLM 'перемикається' між ними: далеко від оптимуму діє як градієнтний спуск, а близько — як Гаусс-Ньютон."
     )
-    # Використовуємо ttk.Label з wraplength, розміщений через grid
+
     lbl_purpose = ttk.Label(purpose_frame, text=purpose_content, wraplength=LEFT_WIDTH-40, justify="left", font=("Helvetica", 10))
     lbl_purpose.grid(row=0, column=0, sticky='ew')
-    #
-    # ---- КІНЕЦЬ БЛОКУ ОНОВЛЕННЯ ----
-    #
 
-    # --- Кнопка запуску апроксимації ---
     run_button = ttk.Button(left_frame, text="Виконати апроксимацію (Знайти модель)", command=lambda: run_fitting())
-    run_button.grid(row=2, column=0, sticky='sew', pady=20) # sticky='sew' = South-East-West
+    run_button.grid(row=2, column=0, sticky='sew', pady=20) 
 
-
-    # --- 3. Права колонка (Графік та Таблиця) ---
-
-    # 3.1 Графік (зверху)
     plot_frame = ttk.LabelFrame(right_frame, text="Практика: Апроксимація Добового Графіка", padding=10)
     plot_frame.pack(side="top", fill="both", expand=True)
 
@@ -100,7 +76,6 @@ def create_tab(tab_control):
                              font=("Helvetica", 10), wraplength=500, justify="left", padding=(5, 5))
     result_label.pack(side=tk.BOTTOM, fill="x")
 
-    # 3.2 Порівняльна таблиця (знизу)
     compare_frame = ttk.LabelFrame(right_frame, text="Порівняння з іншими градієнтними методами", padding=10)
     compare_frame.pack(side="bottom", fill="x", expand=False, pady=(10, 0))
 
@@ -129,11 +104,7 @@ def create_tab(tab_control):
 
     tree_compare.pack(fill="x", expand=True)
 
-
-    # --- 4. Функція запуску апроксимації ---
-    # Тепер функція run_fitting визначена ПІСЛЯ створення всіх віджетів
     def run_fitting():
-        # (Код функції run_fitting залишається без змін)
         print("Запуск апроксимації (Вкладка 6)...")
         x_data, y_data = create_load_data()
         try:
@@ -160,8 +131,6 @@ def create_tab(tab_control):
              result_label.config(text=f"Виникла помилка: {e}")
              print(f"Виникла помилка: {e}")
 
-    # Переприв'язуємо команду кнопці
     run_button.config(command=run_fitting)
 
-    # Запускаємо 1 раз при старті
     run_fitting()
