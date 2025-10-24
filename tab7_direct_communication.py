@@ -3,16 +3,11 @@ from tkinter import ttk, scrolledtext
 import random
 import time
 import threading
-import collections # Для зберігання історії даних
+import collections 
 
-# Для графіків
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
-
-# ##################################################################
-# ---             КЛАСИ АГЕНТІВ (З ПРЯМИМ ЗВ'ЯЗКОМ)               ---
-# ##################################################################
 
 class BaseAgent:
     """Базовий клас для всіх агентів з можливістю зв'язку."""
@@ -20,12 +15,12 @@ class BaseAgent:
         self.name = name
         self.log_widget = None
         self.peers = []
-        self.current_value = 0 # Поточна генерація або 0 для датчика/оператора
+        self.current_value = 0 
 
     def add_peer(self, agent):
         if agent != self and agent not in self.peers:
             self.peers.append(agent)
-            if self not in agent.peers: # Уникаємо дублювання
+            if self not in agent.peers: 
                 agent.peers.append(self)
 
     def send_message(self, recipient_name, message_type, data=None):
@@ -34,7 +29,7 @@ class BaseAgent:
             if peer.name == recipient_name: recipient = peer; break
         if recipient:
             if self.log_widget and self.log_widget.winfo_exists():
-                # Зменшуємо затримку для швидкої реакції
+                
                 self.log_widget.after(10, lambda r=recipient, s=self.name, mt=message_type, d=data: r.receive_message(s, mt, d))
                 self.log(f"Надсилаю '{message_type}' до {recipient_name}")
         else: self.log(f"ПОМИЛКА: Не знайдено '{recipient_name}'.", 'error_msg')
@@ -43,7 +38,7 @@ class BaseAgent:
         self.log(f"Надсилаю '{message_type}' всім (Broadcast)")
         for peer in self.peers:
              if self.log_widget and self.log_widget.winfo_exists():
-                 # Зменшуємо затримку
+                 
                  self.log_widget.after(10, lambda p=peer, s=self.name, mt=message_type, d=data: p.receive_message(s, mt, d))
 
     def receive_message(self, sender_name, message_type, data):
@@ -65,7 +60,6 @@ class BaseAgent:
     def reset(self):
         self.current_value = 0
 
-# --- АГЕНТ: Датчик Захисту ---
 class ProtectionSensorAgent(BaseAgent):
     """Агент, що симулює датчик релейного захисту."""
     def __init__(self, name):
@@ -74,8 +68,7 @@ class ProtectionSensorAgent(BaseAgent):
     def simulate_fault(self):
         """Симулює виявлення короткого замикання."""
         self.log("!!! ВИЯВЛЕНО КОРОТКЕ ЗАМИКАННЯ НА ЛІНІЇ !!!", 'error_msg')
-        # --- ПРЯМИЙ ЗВ'ЯЗОК ---
-        # Негайно надсилаємо сигнал на відключення генераторам
+       
         self.broadcast_message("URGENT_TRIP", {'reason': 'Short Circuit'})
 
     def reset(self):
@@ -87,12 +80,12 @@ class HydroPlantAgentDC(BaseAgent):
     def __init__(self, name, capacity):
         super().__init__(name)
         self.capacity = capacity
-        self.current_value = capacity # Починаємо працюючими
+        self.current_value = capacity 
 
     def trip(self, reason=""):
         """Миттєво знижує/відключає генерацію."""
         if self.current_value > 0:
-            reduction = self.current_value # Відключаємо повністю
+            reduction = self.current_value 
             self.current_value = 0
             self.log(f"РЕАКЦІЯ (НАДШВИДКО)! Отримав TRIP ({reason}). Відключаю {reduction:.0f} МВт!", 'warn_msg')
             self.send_message("Оператор Системи", "ACTION_TAKEN", {'action': 'Tripped', 'value': reduction})
@@ -103,12 +96,12 @@ class HydroPlantAgentDC(BaseAgent):
         super().receive_message(sender_name, message_type, data)
         if message_type == "URGENT_TRIP":
             reason = data.get('reason', 'Unknown') if data else 'Unknown'
-            # ГЕС реагує дуже швидко (майже миттєво)
+            
             if self.log_widget and self.log_widget.winfo_exists():
-                self.log_widget.after(20, lambda r=reason: self.trip(r)) # Дуже мала затримка
+                self.log_widget.after(20, lambda r=reason: self.trip(r)) 
 
     def reset(self):
-        self.current_value = self.capacity # Повертаємо до робочого стану
+        self.current_value = self.capacity 
         self.log(f"Стан скинуто (генерація {self.current_value} МВт).")
 
 
@@ -117,8 +110,8 @@ class GasTurbineAgentDC(BaseAgent):
     def __init__(self, name, capacity, ramp_down_time_sec=2):
         super().__init__(name)
         self.capacity = capacity
-        self.ramp_down_time = ramp_down_time_sec # Час на зниження
-        self.current_value = capacity # Починаємо працюючими
+        self.ramp_down_time = ramp_down_time_sec 
+        self.current_value = capacity 
         self.target_output = capacity
         self._timer = None
 
@@ -138,7 +131,7 @@ class GasTurbineAgentDC(BaseAgent):
             return
 
         if self.current_value > 0:
-            self.target_output = 0 # Знижуємо до нуля
+            self.target_output = 0 
             reduction_amount = self.current_value - self.target_output
             self.log(f"Отримав TRIP ({reason}). Починаю зниження на {reduction_amount:.0f} МВт ({self.ramp_down_time} сек)...")
             self._timer = threading.Timer(self.ramp_down_time, self._ramp_down)
@@ -151,14 +144,14 @@ class GasTurbineAgentDC(BaseAgent):
         super().receive_message(sender_name, message_type, data)
         if message_type == "URGENT_TRIP":
             reason = data.get('reason', 'Unknown') if data else 'Unknown'
-            # ТЕЦ реагує повільніше
+            
             self.start_ramp_down(reason=reason)
 
     def reset(self):
         if self._timer is not None:
             self._timer.cancel()
             self._timer = None
-        self.current_value = self.capacity # Повертаємо до робочого стану
+        self.current_value = self.capacity 
         self.target_output = self.capacity
         self.log(f"Стан скинуто (генерація {self.current_value} МВт).")
 
@@ -168,7 +161,6 @@ class SystemOperatorAgentDC(BaseAgent):
     def __init__(self, name, all_agents, graph_update_callback):
         super().__init__(name)
         self.all_agents = all_agents
-        # log_widget встановлюється пізніше через set_log_widget
         self.graph_update_callback = graph_update_callback
         self.data_history = collections.defaultdict(lambda: collections.deque(maxlen=60))
         self.is_collecting = False
@@ -183,14 +175,14 @@ class SystemOperatorAgentDC(BaseAgent):
         super().log(message, tag)
 
     def receive_message(self, sender_name, message_type, data):
-        # Оператор отримує повідомлення пізніше
-        delay = 200 # мс затримки
+        
+        delay = 200 
         if self.log_widget and self.log_widget.winfo_exists():
             self.log_widget.after(delay, lambda s=sender_name, mt=message_type, d=data: self._process_delayed_message(s, mt, d))
 
     def _process_delayed_message(self, sender_name, message_type, data):
         """Обробка повідомлення з імітацією затримки."""
-        super().receive_message(sender_name, message_type, data) # Логуємо отримання
+        super().receive_message(sender_name, message_type, data) 
         if message_type == "ACTION_TAKEN":
             self.log(f"Агент {sender_name} відзвітував: {data.get('action', '')} ({data.get('value', '')})")
         elif message_type == "URGENT_TRIP":
@@ -215,27 +207,19 @@ class SystemOperatorAgentDC(BaseAgent):
         if not (self.log_widget and self.log_widget.winfo_exists()):
              self.is_collecting = False; return
 
-        current_time_step = len(self.data_history['time']) # Крок часу
+        current_time_step = len(self.data_history['time']) 
 
         self.data_history['time'].append(current_time_step)
-        # Змінюємо індекси відповідно до нового списку агентів
-        # all_agents_list = [sensor, hydro_plant, gas_turbine]
-        self.data_history['hydro'].append(self.all_agents[1].current_value) # ГЕС
-        self.data_history['gas'].append(self.all_agents[2].current_value)   # ТЕЦ
+        self.data_history['hydro'].append(self.all_agents[1].current_value) 
+        self.data_history['gas'].append(self.all_agents[2].current_value)   
 
         if self.graph_update_callback:
             self.graph_update_callback(self.data_history)
 
-        # Оновлюємо кожні 200 мс
         self._collection_timer_id = self.log_widget.after(200, self._collect_data_loop)
 
     def reset(self):
         self.log("Стан оператора не змінюється.", 'operator_msg')
-
-
-# ##################################################################
-# ---               ГОЛОВНА ФУНКЦІЯ ДЛЯ СТВОРЕННЯ ВКЛАДКИ         ---
-# ##################################################################
 
 def create_tab(tab_control):
     """Створює вміст для сьомої вкладки."""
@@ -243,7 +227,6 @@ def create_tab(tab_control):
     tab7 = ttk.Frame(tab_control, padding=(10, 10))
     tab_control.add(tab7, text='Завдання 7: Прямий Зв\'язок')
 
-    # --- 1. Створення фреймів ---
     main_frame = ttk.Frame(tab7)
     main_frame.pack(fill="both", expand=True)
 
@@ -254,10 +237,6 @@ def create_tab(tab_control):
     right_column_frame = ttk.Frame(main_frame)
     right_column_frame.pack(side="right", fill="both", expand=True)
 
-    # --- 2. Ліва колонка (Теорія) ---
-    #
-    # ---- ВЕЛИКИЙ БЛОК ОНОВЛЕННЯ: Прибрано `**` з тексту ----
-    #
     theory_frame = ttk.LabelFrame(left_column_frame, text="Аналіз Методу з Прямим Зв'язком", padding=10)
     theory_frame.pack(fill="x")
 
@@ -291,11 +270,7 @@ def create_tab(tab_control):
         "- Безпека: Більше точок для можливих атак або помилок."
     )
     create_theory_section(theory_frame, "Недоліки", cons_content)
-    #
-    # ---- КІНЕЦЬ БЛОКУ ОНОВЛЕННЯ ----
-    #
 
-    # --- 3. Лог та кнопки управління ---
     control_log_frame = ttk.LabelFrame(left_column_frame, text="Лог Симуляції та Управління", padding=10)
     control_log_frame.pack(fill="both", expand=True, pady=10)
 
@@ -314,8 +289,6 @@ def create_tab(tab_control):
     log_widget.tag_config('ok_msg', foreground='green', font=("Courier", 9, "bold"))
     log_widget.tag_config('error_msg', foreground='red', font=("Courier", 9, "bold"))
 
-
-    # --- 4. Графік (у правій колонці) ---
     graph_frame = ttk.LabelFrame(right_column_frame, text="Динаміка Генерації під час Аварії (МВт)", padding=10)
     graph_frame.pack(fill="both", expand=True)
 
@@ -336,12 +309,8 @@ def create_tab(tab_control):
     INITIAL_Y_MAX = 120
     ax.set_ylim(-10, INITIAL_Y_MAX)
 
-
-    # --- 5. Створення агентів ---
-
     simulation_running = False
 
-    # --- Функція оновлення графіку ---
     def update_graph(data_history):
         if not (log_widget and log_widget.winfo_exists()): return
 
@@ -355,15 +324,14 @@ def create_tab(tab_control):
         line_gas.set_data(times, gas_values)
 
         ax.set_xlim(-0.5, times[-1] + 0.5)
-        min_y = -10 # Фіксований мінімум
-        # Максимум беремо з початкової потужності + невеликий запас
+        min_y = -10 
+
         max_y = max(INITIAL_Y_MAX, np.max(hydro_values) if hydro_values.size > 0 else 0, np.max(gas_values) if gas_values.size > 0 else 0) + 10
         ax.set_ylim(min_y, max_y)
 
         try: canvas.draw_idle()
         except tk.TclError: pass
 
-    # --- Функція запуску симуляції ---
     def simulate_event(event_type):
         nonlocal simulation_running
         if simulation_running:
@@ -409,25 +377,20 @@ def create_tab(tab_control):
 
         log_widget.config(state='disabled')
 
-    # Створюємо агентів ПІСЛЯ визначення функцій
     sensor = ProtectionSensorAgent("Датчик ЛЕП-110")
     hydro_plant = HydroPlantAgentDC("ГЕС-Швидка", capacity=100)
     gas_turbine = GasTurbineAgentDC("ТЕЦ-Маневр (Газ)", capacity=80, ramp_down_time_sec=2)
     operator = SystemOperatorAgentDC("Оператор Системи", [sensor, hydro_plant, gas_turbine], update_graph)
 
-    # Налаштовуємо зв'язки
     sensor.add_peer(hydro_plant); sensor.add_peer(gas_turbine); sensor.add_peer(operator)
     hydro_plant.add_peer(operator); gas_turbine.add_peer(operator)
-    # ГЕС і ТЕЦ можуть не знати одна одну в цьому сценарії
 
-    # Передаємо log_widget Оператору та іншим агентам
     operator.set_log_widget(log_widget)
     sensor.log_widget = log_widget; hydro_plant.log_widget = log_widget;
     gas_turbine.log_widget = log_widget;
 
-    # --- 6. Кнопки запуску (Прив'язка команд після визначення функції) ---
     run_button_fault.config(command=lambda: simulate_event('fault'), state='normal')
 
-    # Початкове повідомлення та запуск збору даних
     operator.log("Система готова. Натисніть кнопку.", 'ok_msg')
-    operator.start_data_collection() # Починаємо збір даних одразу
+
+    operator.start_data_collection() 
