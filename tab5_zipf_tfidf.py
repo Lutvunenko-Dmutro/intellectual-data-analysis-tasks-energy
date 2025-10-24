@@ -4,20 +4,14 @@ import numpy as np
 import re
 import collections
 import random
-import datetime # Потрібно для генерації логів
+import datetime 
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-# Використовуємо scikit-learn для TF-IDF
 from sklearn.feature_extraction.text import TfidfVectorizer
-
-# ##################################################################
-# ---                ЛОГІКА АНАЛІЗУ ТЕКСТУ                       ---
-# ##################################################################
 
 def generate_log_file():
     """Створює симульований лог-файл."""
-    # (Код генерації логів залишається без змін)
     logs = []
     start_time = datetime.datetime(2025, 10, 24, 14, 30, 0)
     common_events = [
@@ -45,7 +39,6 @@ def generate_log_file():
 
 def tokenize(text):
     """Оновлений токенізатор."""
-    # (Код токенізації залишається без змін)
     text = re.sub(r'\[.*?\]', '', text)
     text = text.lower()
     text = re.sub(r'\b(info|warn|alert|critical|error)\b', '', text)
@@ -53,81 +46,62 @@ def tokenize(text):
     tokens = [token for token in tokens if not token.isdigit()]
     return tokens
 
-# ##################################################################
-# ---               ГОЛОВНА ФУНКЦІЯ ДЛЯ СТВОРЕННЯ ВКЛАДКИ         ---
-# ##################################################################
-
 def create_tab(tab_control):
     """Створює вміст для п'ятої вкладки."""
 
     tab5 = ttk.Frame(tab_control, padding=(10, 10))
     tab_control.add(tab5, text='Завдання 5: Аналіз Логів (NLP)')
 
-    # --- 1. Створення фреймів ---
     main_frame = ttk.Frame(tab5)
     main_frame.pack(fill="both", expand=True)
 
-    # Задаємо фіксовану ширину і забороняємо стискання
     LEFT_WIDTH = 500
     left_frame = ttk.Frame(main_frame, width=LEFT_WIDTH)
     left_frame.pack(side="left", fill="y", padx=10, expand=False)
     left_frame.pack_propagate(False)
-    # Налаштовуємо grid всередині left_frame
-    left_frame.grid_rowconfigure(0, weight=0) # Теорія
-    left_frame.grid_rowconfigure(1, weight=1) # Логи розтягуються
-    left_frame.grid_columnconfigure(0, weight=1) # Колонка займає всю ширину
+
+    left_frame.grid_rowconfigure(0, weight=0) 
+    left_frame.grid_rowconfigure(1, weight=1) 
+    left_frame.grid_columnconfigure(0, weight=1) 
 
 
     right_frame = ttk.Frame(main_frame)
     right_frame.pack(side="right", fill="both", expand=True)
 
-    # --- 2. Ліва колонка (Теорія та Лог) ---
-    #
-    # ---- ВЕЛИКИЙ БЛОК ОНОВЛЕННЯ: ttk.Label + grid() для теорії ----
-    #
     theory_frame = ttk.LabelFrame(left_frame, text="Закон Ципфа та TF-IDF (Теорія)", padding=10)
-    theory_frame.grid(row=0, column=0, sticky='new') # Розміщуємо рамку теорії
-    theory_frame.grid_columnconfigure(0, weight=1) # Дозволяємо вмісту розтягуватись
+    theory_frame.grid(row=0, column=0, sticky='new') 
+    theory_frame.grid_columnconfigure(0, weight=1) 
 
-    # Задаємо ширину для переносу тексту (трохи менше ширини колонки)
     WRAP_WIDTH = LEFT_WIDTH - 40
 
-    # --- Блок 1: Закон Ципфа ---
     zipf_theory_frame = ttk.LabelFrame(theory_frame, text="1. У чому полягає закон Ципфа?", padding=7)
     zipf_theory_frame.grid(row=0, column=0, sticky='new', pady=5)
-    zipf_theory_frame.grid_columnconfigure(0, weight=1) # Колонка всередині
+    zipf_theory_frame.grid_columnconfigure(0, weight=1) 
 
     zipf_content = (
         "Закон Ципфа — це емпіричний закон, який стверджує, що частота слова обернено пропорційна його рангу (його порядковому номеру у списку за спаданням частоти).\n\n"
         "ПРОСТОЮ МОВОЮ: У будь-якому тексті (включно з логами) буде декілька ДУЖЕ ЧАСТИХ слів ('INFO', 'WARN') і величезна кількість рідкісних слів ('FIRE'). Графік (Ранг-Частота) у лог-координатах буде прямою лінією."
     )
-    # Використовуємо ttk.Label з wraplength, розміщений через grid
+    
     lbl_zipf = ttk.Label(zipf_theory_frame, text=zipf_content, wraplength=WRAP_WIDTH, justify="left", font=("Helvetica", 10))
     lbl_zipf.grid(row=0, column=0, sticky='ew')
 
-
-    # --- Блок 2: Ваги слів ---
     tfidf_theory_frame = ttk.LabelFrame(theory_frame, text="2. Яким чином обчислити ваги слів?", padding=7)
     tfidf_theory_frame.grid(row=1, column=0, sticky='new', pady=5)
-    tfidf_theory_frame.grid_columnconfigure(0, weight=1) # Колонка всередині
+    tfidf_theory_frame.grid_columnconfigure(0, weight=1) 
 
     tfidf_content = (
         "A) Проста частота (Frequency): Просто порахувати, скільки разів зустрічається слово. Мінус: 'INFO' матиме найвищу вагу, хоча воно неважливе.\n\n"
         "Б) TF-IDF (Term Frequency-Inverse Document Frequency): Це найкращий метод. Вага слова = (Як часто слово в цьому повідомленні?) × (Наскільки рідкісне це слово у всіх інших повідомленнях?).\n\n"
         "РЕЗУЛЬТАТ: TF-IDF дає найвищу вагу словам, які часто зустрічаються в *одному конкретному* повідомленні про аварію, але *рідко* зустрічаються в усьому іншому \"шумному\" лог-файлі (напр., 'FIRE', 'substation_7')."
     )
-    # Використовуємо ttk.Label з wraplength, розміщений через grid
+
     lbl_tfidf = ttk.Label(tfidf_theory_frame, text=tfidf_content, wraplength=WRAP_WIDTH, justify="left", font=("Helvetica", 10))
     lbl_tfidf.grid(row=0, column=0, sticky='ew')
-    #
-    # ---- КІНЕЦЬ БЛОКУ ОНОВЛЕННЯ ----
-    #
 
-    # --- Кнопка запуску ---
     run_button = ttk.Button(theory_frame, text="Згенерувати та Проаналізувати Лог-файл", command=lambda: run_analysis(log_widget, ax_zipf, canvas_zipf, tree_tfidf))
     run_button.grid(row=2, column=0, sticky='ew', pady=10)
 
-    # --- Лог-файл ---
     log_frame = ttk.LabelFrame(left_frame, text="Симульований Журнал Тривог (N=1000)", padding=10)
     log_frame.grid(row=1, column=0, sticky='nsew', pady=10)
 
@@ -135,9 +109,6 @@ def create_tab(tab_control):
                                             font=("Courier", 9), state='disabled')
     log_widget.pack(fill="both", expand=True)
 
-
-    # --- 3. Права колонка (Результати) ---
-    # (Код для правої колонки залишається без змін)
     zipf_frame = ttk.LabelFrame(right_frame, text="Доведення Закону Ципфа (Графік Ранг-Частота)", padding=10)
     zipf_frame.pack(fill="both", expand=True)
     fig_zipf = Figure(figsize=(6, 4), dpi=100)
@@ -156,9 +127,7 @@ def create_tab(tab_control):
     tree_tfidf.column('tfidf_val', width=80, anchor='e'); tree_tfidf.heading('tfidf_val', text='Вага TF-IDF')
     tree_tfidf.pack(fill="both", expand=True)
 
-    # --- 4. Функція Аналізу ---
     def run_analysis(log_widget, ax_zipf, canvas_zipf, tree_tfidf):
-        # (Код аналізу залишається без змін)
         print("Запуск аналізу логів (Вкладки 5)...")
         log_data = generate_log_file()
         log_widget.config(state='normal')
@@ -195,8 +164,4 @@ def create_tab(tab_control):
             tree_tfidf.insert('', 'end', values=(rank, freq_word, freq_val, tfidf_word, f"{tfidf_val:.4f}"))
         print("Аналіз логів завершено.")
 
-    # --- 5. Кнопка запуску ---
-    # Вже створена вище
-
-    # Запускаємо 1 раз при старті
     run_analysis(log_widget, ax_zipf, canvas_zipf, tree_tfidf)
